@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # LangGraph Research Assistant
 
 > A multi-agent research workflow that creates analyst personas, runs parallel interview loops with web search, and synthesizes the results into a cited report using LangGraph, LangChain, OpenAI, and Tavily.
@@ -323,3 +324,7 @@ The full graph returns a `final_report` field containing the generated Markdown 
 ## License
 
 MIT. Use it, extend it, and build on it.
+=======
+# LangGraph_Research_Assistant_Agent
+This project is to create personal assistant using LangGraph from Scratch
+>>>>>>> 374985914f0c6354ffc0a77d282f9297b3518c22
