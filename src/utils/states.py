@@ -13,7 +13,7 @@ class GenerateAnalystsState(TypedDict):
     analysts: NotRequired[List[Analyst]] # Analyst asking questions
 
 class InterviewState(MessagesState):
-    max_num_turns: int # Number turns of conversation
+    max_num_turns: NotRequired[int] # Number turns of conversation
     context: Annotated[list, operator.add] # Source docs
     analyst: Analyst # Analyst asking questions
     interview: str # Interview transcript
@@ -25,6 +25,7 @@ class SearchQuery(BaseModel):
 class ResearchGraphState(TypedDict):
     topic: str # Research topic
     max_analysts: int # Number of analysts
+    max_num_turns: NotRequired[int] # Max expert turns per interview
     human_analyst_feedback: NotRequired[Optional[str]] # Human feedback
     analysts: List[Analyst] # Analyst asking questions
     sections: Annotated[list, operator.add] # Send() API key

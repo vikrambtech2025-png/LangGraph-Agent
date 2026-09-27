@@ -10,3 +10,10 @@ wheels/
 .venv
 .env
 .langgraph_api
+
+# Local agent tooling (vendored third-party skills, not project code)
+.agents/
+skills-lock.json
+
+# Test / tooling caches
+.pytest_cache/

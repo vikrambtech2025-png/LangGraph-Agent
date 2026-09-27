@@ -1,7 +1,7 @@
 [project]
 name = "langgraph-assistant"
 version = "0.1.0"
-description = "Add your description here"
+description = "A multi-agent LangGraph research workflow: analyst personas, parallel interview loops with web search, and cited report synthesis."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,3 +14,12 @@ dependencies = [
     "langgraph>=1.2.11",
     "langgraph-cli[inemem,inmem]>=0.4.31",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

@@ -16,4 +16,8 @@ builder.add_edge("create_analysts", "human_feedback")
 builder.add_conditional_edges("human_feedback", should_continue, ["create_analysts", "dummy"])
 builder.add_edge("dummy", END)
 
-graph = builder.compile(interrupt_before=['human_feedback'])
+# The `human_feedback` node calls interrupt() itself so it can surface the
+# generated analysts for review. Do not also pass interrupt_before here: a
+# static interrupt fires first and swallows that payload, leaving the user
+# staring at an empty pause with nothing to approve.
+graph = builder.compile()

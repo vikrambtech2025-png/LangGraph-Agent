@@ -62,11 +62,6 @@ def human_feedback(state: GenerateAnalystsState):
 
     return {"human_analyst_feedback": None}
 
-def human_feedback_update(state: GenerateAnalystsState):
-    """this will update the human feedback state"""
-    human_feedback = GenerateAnalystsState["human_analyst_feedback"]
-    return {"human_analyst_feedback" : human_feedback}
-
 def dummy(state: GenerateAnalystsState):
     """ No-op node that should be interrupted on """
     pass
@@ -138,18 +133,6 @@ def generate_answer(state: InterviewState):
     # Append it to state
     return {"messages": [answer]}
 
-def save_interview(state: InterviewState):
-    """ Save interviews """
-
-    # Get messages
-    messages = state["messages"]
-    
-    # Convert interview to a string
-    interview = get_buffer_string(messages)
-    
-    # Save to interviews key
-    return {"interview": interview}
-
 tavily_search = TavilySearch(max_results=3)
 
 search_instructions_system_message = SystemMessage(content=search_instructions)
@@ -160,31 +143,7 @@ def search_web(state: InterviewState):
 
     # Search query
     structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions]+state['messages'])
-    
-    # Search
-    #search_docs = tavily_search.invoke(search_query.search_query) # updated 1.0
-    data = tavily_search.invoke({"query": search_query.search_query})
-    search_docs = data.get("results", data)
-    
-
-     # Format
-    formatted_search_docs = "\n\n---\n\n".join(
-        [
-            f'<Document href="{doc["url"]}"/>\n{doc["content"]}\n</Document>'
-            for doc in search_docs
-        ]
-    )
-
-    return {"context": [formatted_search_docs]}
-
-def search_web2(state: InterviewState):
-
-    """ Retrieve docs from web search """
-
-    # Search query
-    structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions]+state['messages'])
+    search_query = structured_llm.invoke([search_instructions_system_message]+state['messages'])
     
     # Search
     #search_docs = tavily_search.invoke(search_query.search_query) # updated 1.0
@@ -225,8 +184,8 @@ def write_introduction(state: ResearchGraphState):
     
     # Summarize the sections into a final report
     
-    instructions = intro_conclusion_instructions.format(topic=topic, formatted_str_sections=formatted_str_sections)    
-    intro = llm.invoke([instructions]+[HumanMessage(content=f"Write the report introduction")]) 
+    instructions = SystemMessage(content=intro_conclusion_instructions.format(topic=topic, formatted_str_sections=formatted_str_sections))    
+    intro = llm.invoke([instructions, HumanMessage(content="Write the report introduction")]) 
     return {"introduction": intro.content}
 
 def write_conclusion(state: ResearchGraphState):
@@ -240,25 +199,31 @@ def write_conclusion(state: ResearchGraphState):
     
     # Summarize the sections into a final report
     
-    instructions = intro_conclusion_instructions.format(topic=topic, formatted_str_sections=formatted_str_sections)    
-    conclusion = llm.invoke([instructions]+[HumanMessage(content=f"Write the report conclusion")]) 
+    instructions = SystemMessage(content=intro_conclusion_instructions.format(topic=topic, formatted_str_sections=formatted_str_sections))    
+    conclusion = llm.invoke([instructions, HumanMessage(content="Write the report conclusion")]) 
     return {"conclusion": conclusion.content}
 
 def finalize_report(state: ResearchGraphState):
     """ The is the "reduce" step where we gather all the sections, combine them, and reflect on them to write the intro/conclusion """
     # Save full final report
     content = state["content"]
+
+    # Drop the leading title. removeprefix, not strip: strip() removes a
+    # *character set*, so it would also eat real characters off the body.
     if content.startswith("## Insights"):
-        content = content.strip("## Insights")
+        content = content.removeprefix("## Insights").strip()
+
+    # Peel off the Sources block. Split on the *first* header so the body ends
+    # cleanly, then drop any repeated headers from the tail so a model that
+    # emits the section twice can't leave entries stranded inline in the body.
     if "## Sources" in content:
-        try:
-            content, sources = content.split("\n## Sources\n")
-        except:
-            sources = None
+        body, _, sources = content.partition("## Sources")
+        content = body.strip()
+        sources = sources.replace("## Sources", "").strip()
     else:
         sources = None
 
     final_report = state["introduction"] + "\n\n---\n\n" + content + "\n\n---\n\n" + state["conclusion"]
-    if sources is not None:
+    if sources:
         final_report += "\n\n## Sources\n" + sources
     return {"final_report": final_report}
